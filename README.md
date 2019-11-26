@@ -1,6 +1,6 @@
 # mongoose-serialization-proxy-plugin [![Actions Status](https://github.com/azu/mongoose-serialization-proxy-plugin/workflows/ci/badge.svg)](https://github.com/azu/mongoose-serialization-proxy-plugin/actions?query=workflow%3Aci)
 
-Hide secret properties of mongo model when serialize the model with `JSON.strinigiy`.
+Hide secret properties of mongo model when serialize the model with `JSON.stringify`.
 
 ## Motivation
 
