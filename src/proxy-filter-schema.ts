@@ -72,7 +72,7 @@ export const filterTargetWithFilterSchema = <T extends { [index: string]: any }>
             }
         } else if (childSchemaOrAccess === undefined) {
             // if it is private value, hide the value
-            if (options.defaultSchemaAccess === "public") {
+            if (options.defaultFieldsAccess === "public") {
                 obj[key] = localTarget[key];
             }
         }
@@ -85,17 +85,16 @@ export interface proxySchemaOptions {
      * Default access level of undefined property of filterSchema
      * Default: "private"
      */
-    defaultSchemaAccess?: FILTER_SCHEMA_ACCESS;
+    defaultFieldsAccess?: FILTER_SCHEMA_ACCESS;
 }
 
 const DefaultOptions = {
-    autoSchemaAccess: "private",
-    defaultSchemaAccess: "private"
+    defaultFieldsAccess: "private"
 } as const;
 
 export const mergeOptionWithDefault = (options?: proxySchemaOptions): Required<proxySchemaOptions> => {
-    const defaultSchemaAccess = options && options.defaultSchemaAccess !== undefined ? options.defaultSchemaAccess : DefaultOptions.defaultSchemaAccess;
-    return { defaultSchemaAccess };
+    const defaultSchemaAccess = options && options.defaultFieldsAccess !== undefined ? options.defaultFieldsAccess : DefaultOptions.defaultFieldsAccess;
+    return { defaultFieldsAccess: defaultSchemaAccess };
 };
 /**
  * proxy with schema object
@@ -104,7 +103,7 @@ export const mergeOptionWithDefault = (options?: proxySchemaOptions): Required<p
  * @param options
  */
 export const proxySchema = <T extends { [index: string]: any }>(target: T, filterSchema: FilterSchema<T> | FILTER_SCHEMA_ACCESS, options?: proxySchemaOptions): T => {
-    const { defaultSchemaAccess } = mergeOptionWithDefault(options);
+    const { defaultFieldsAccess } = mergeOptionWithDefault(options);
 
     function innerProxy(localTarget: T, localSchema: FilterSchema<T> | FILTER_SCHEMA_ACCESS, keyStack: string[] = []): T {
         return new Proxy(localTarget, {
@@ -120,7 +119,7 @@ export const proxySchema = <T extends { [index: string]: any }>(target: T, filte
                             localSchema: localSchema,
                             localKeyStack: keyStack
                         }, {
-                            defaultSchemaAccess
+                            defaultFieldsAccess
                         });
                     };
                 }

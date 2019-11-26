@@ -23,7 +23,7 @@ describe("create-filter-schema", function() {
             }
         });
         const filterSchema = createFilterSchema(schema, {
-            defaultSchemaAccess: "public"
+            defaultFieldsAccess: "public"
         });
         assert.deepStrictEqual(filterSchema, {
             "_id": "private",
@@ -43,7 +43,7 @@ describe("create-filter-schema", function() {
             email: String
         });
         const filterSchema = createFilterSchema(schema, {
-            defaultSchemaAccess: "public"
+            defaultFieldsAccess: "public"
         });
         assert.deepStrictEqual(filterSchema, {
             "_id": "private",
@@ -58,7 +58,7 @@ describe("create-filter-schema", function() {
             email: String
         });
         const filterSchema = createFilterSchema(schema, {
-            autoSchemaAccess: "public"
+            autoFieldAccess: "public"
         });
         assert.deepStrictEqual(filterSchema, {
             "_id": "public",

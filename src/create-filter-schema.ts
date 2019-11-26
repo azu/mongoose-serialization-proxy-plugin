@@ -18,17 +18,24 @@ export type createFilterSchemaOptions = proxySchemaOptions & {
      * Default access level of auto schema like `_id`
      * Default: "private"
      */
-    autoSchemaAccess?: FILTER_SCHEMA_ACCESS;
+    autoFieldAccess?: FILTER_SCHEMA_ACCESS;
     /**
      *  Default access level of versionKey like `__v`
      *  Default: "private"
      */
     versionKeyAccess?: FILTER_SCHEMA_ACCESS;
+    /**
+     * Default access level of virtual property
+     * Default: "private"
+     *
+     * Note: defaultVirtualsAccess only support Schema#toJSON
+     */
+    defaultVirtualsAccess?: FILTER_SCHEMA_ACCESS;
 }
 export const createFilterSchema = <T extends {}>(schema: Schema<T>, options?: createFilterSchemaOptions): FilterSchema<T> => {
     const versionKeyAccess = options && options.versionKeyAccess !== undefined ? options.versionKeyAccess : "private";
-    const autoSchemaAccess = options && options.autoSchemaAccess !== undefined ? options.autoSchemaAccess : "private";
-    const defaultSchemaAccess: FILTER_SCHEMA_ACCESS = options && options.defaultSchemaAccess !== undefined ? options.defaultSchemaAccess : "private";
+    const autoSchemaAccess = options && options.autoFieldAccess !== undefined ? options.autoFieldAccess : "private";
+    const defaultSchemaAccess: FILTER_SCHEMA_ACCESS = options && options.defaultFieldsAccess !== undefined ? options.defaultFieldsAccess : "private";
     const schemaOptions: SchemaOptions = (schema as any).options;
     const versionKey = schemaOptions.versionKey !== undefined && typeof schemaOptions.versionKey === "string" ? schemaOptions.versionKey : "_v";
     const propSchema: FilterSchema<any> = {
@@ -49,5 +56,6 @@ export const createFilterSchema = <T extends {}>(schema: Schema<T>, options?: cr
         const res = partsToValue(parts, filterSchemaValue);
         return Object.assign(propSchema, res);
     });
+
     return propSchema;
 };

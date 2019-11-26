@@ -17,7 +17,7 @@ const factoryShouldWrapProxy = (options?: proxySchemaOptions) => {
         if (filterValue === "private") {
             return true;
         }
-        if (filterValue === undefined && options && options.defaultSchemaAccess === "private") {
+        if (filterValue === undefined && options && options.defaultFieldsAccess === "private") {
             return true;
         }
         // "public" then does not wrap
@@ -57,11 +57,21 @@ export function mongooseSerializeProxyPlugin(filterOptions?: createFilterSchemaO
             // post hook does not support return value
         });
         // toJSON hook - filter with schema
+        const toJSONOptions: {} = schema.get("toJSON") || {};
         schema.set("toJSON", {
+            ...toJSONOptions,
             transform: (_doc, ret, _options) => {
+                const virtualKeys = Object.keys(ret).filter(key => {
+                    return schema.pathType(key) === "virtual";
+                });
+                const defaultVirtualsAccess = filterOptions && filterOptions.defaultVirtualsAccess ? filterOptions.defaultVirtualsAccess : "private";
+                const virtualFilterSchema = virtualKeys.reduce((result, key) => {
+                    result[key] = defaultVirtualsAccess;
+                    return result;
+                }, {} as { [index: string]: FILTER_SCHEMA_ACCESS });
                 return filterTargetWithFilterSchema({
                     localTarget: ret,
-                    localSchema: filterSchema,
+                    localSchema: { ...filterSchema, ...virtualFilterSchema },
                     localKeyStack: []
                 }, mergeOptionWithDefault(filterOptions));
             }
