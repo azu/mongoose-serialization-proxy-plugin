@@ -1,0 +1,79 @@
+{
+  "name": "mongoose-serialization-proxy-plugin",
+  "version": "1.0.0",
+  "description": "Hide mongo model properties when JSON.stringify for mongoose plugin.",
+  "keywords": [
+    "json",
+    "mongo",
+    "mongoose",
+    "plugin",
+    "security",
+    "serialize"
+  ],
+  "homepage": "https://github.com/azu/mongoose-serialization-proxy-plugin",
+  "bugs": {
+    "url": "https://github.com/azu/mongoose-serialization-proxy-plugin/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azu/mongoose-serialization-proxy-plugin.git"
+  },
+  "license": "MIT",
+  "author": "azu",
+  "files": [
+    "bin/",
+    "lib/",
+    "src/"
+  ],
+  "main": "lib/mongoose-serialization-proxy-plugin.js",
+  "types": "lib/mongoose-serialization-proxy-plugin.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "build": "cross-env NODE_ENV=production tsc -p .",
+    "clean": "rimraf lib/",
+    "prettier": "prettier --write \"**/*.{js,jsx,ts,tsx,css}\"",
+    "prepublish": "npm run --if-present build",
+    "test": "mocha \"test/**/*.ts\"",
+    "watch": "tsc -p . --watch"
+  },
+  "husky": {
+    "hooks": {
+      "precommit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,css}": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "prettier": {
+    "printWidth": 120,
+    "singleQuote": false,
+    "tabWidth": 4
+  },
+  "devDependencies": {
+    "@types/mocha": "^5.2.7",
+    "@types/mongoose": "^5.5.32",
+    "@types/node": "^12.12.14",
+    "@types/traverse": "^0.6.32",
+    "cross-env": "^6.0.3",
+    "husky": "^3.1.0",
+    "lint-staged": "^9.4.3",
+    "mocha": "^6.2.2",
+    "mongoose": "^5.7.12",
+    "prettier": "^1.19.1",
+    "rimraf": "^3.0.0",
+    "ts-node": "^8.5.2",
+    "ts-node-test-register": "^8.0.1",
+    "typescript": "^3.7.2"
+  },
+  "dependencies": {
+    "@moyuyc/walk-tree": "^1.0.3",
+    "traverse": "^0.6.6",
+    "tree-crawl": "^1.0.5"
+  }
+}
