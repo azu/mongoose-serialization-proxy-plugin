@@ -13,15 +13,15 @@ jobs:
         node_version: [12]
         mongodb-version: ["3.6", "4"]
     steps:
-      jobs:
-        - name: Start MongoDB
-          uses: wbari/start-mongoDB@v0.2
-          with:
-            mongoDBVersion: ${{ matrix.mongodb-version }}
-        - uses: actions/checkout@v1
-        - name: Use Node.js ${{ matrix.node_version }}
-          uses: actions/setup-node@v1
-          with:
-            node-version: ${{ matrix.node_version }}
-        - run: yarn install
-        - run: yarn test
+      - name: Start MongoDB
+        uses: wbari/start-mongoDB@v0.2
+        with:
+          mongoDBVersion: ${{ matrix.mongodb-version }}
+      - uses: actions/checkout@v1
+      - name: Use Node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node_version }}
+      - run: yarn install
+      - run: yarn test
+
