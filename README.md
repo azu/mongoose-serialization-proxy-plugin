@@ -142,6 +142,7 @@ See [Releases page](https://github.com/azu/mongoose-serialization-proxy-plugin/r
 
 Install devDependencies and Run `npm test`:
 
+    make up
     npm test
 
 ## Contributing
