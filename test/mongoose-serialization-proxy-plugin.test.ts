@@ -40,8 +40,55 @@ describe("mongoose-serialization-proxy-plugin", function () {
         mongoose.connection.close(done);
     });
 
-    describe("A model with no hidden properties defined", function () {
-        it("should return all properties", async function () {
+    describe("When no define access field", function () {
+        it("should hide all properties by default", async function () {
+            const UserSchema = new Schema<User>({
+                name: String,
+                email: String,
+                password: {
+                    type: String,
+                },
+                secretSettings: {
+                    type: Schema.Types.Mixed,
+                },
+                secretObject: {
+                    child: {
+                        type: Schema.Types.Mixed,
+                    }
+                }
+            });
+            UserSchema.plugin(mongooseSerializeProxyPlugin());
+            const User = model<User>("User", UserSchema);
+            const userJoe = new User({
+                name: "Joe",
+                email: "joe@example.com",
+                password: "secret",
+                secretSettings: {
+                    age: 12
+                }
+            });
+            await userJoe.save();
+            const user = await User.findOne({
+                name: "Joe"
+            });
+            if (!user) {
+                throw new Error("Not found findUserJoe");
+            }
+            // property reference is ok
+            assert.strictEqual(user.password, "secret");
+            assert.deepStrictEqual(user.secretSettings, {age: 12});
+            // serialization should be filtered
+            assert.deepStrictEqual(user.toJSON(), {});
+            assert.strictEqual(JSON.stringify(user), `{}`);
+            // Assignment value should be filtered
+            const secretSettings = user.secretSettings;
+            assert.strictEqual(JSON.stringify(secretSettings), `{}`);
+        });
+    });
+
+    describe('when define access for field', function () {
+
+        it("should hide all properties", async function () {
             const UserSchema = new Schema<User>({
                 name: String,
                 email: String,
@@ -233,124 +280,124 @@ describe("mongoose-serialization-proxy-plugin", function () {
             // then,
             assert.ok(shouldCalled, "toJSONCallback should be called");
         });
-        describe('dry-run', function () {
-            it("should not modify json object", async () => {
-                const UserSchema = new Schema<User>({
-                    name: String,
-                    email: String,
-                    password: {
-                        type: String,
-                    },
-                    secretSettings: {
+    });
+    describe('When enable dry-run option', function () {
+        it("should not modify json object", async () => {
+            const UserSchema = new Schema<User>({
+                name: String,
+                email: String,
+                password: {
+                    type: String,
+                },
+                secretSettings: {
+                    type: Schema.Types.Mixed,
+                },
+                secretObject: {
+                    child: {
                         type: Schema.Types.Mixed,
-                    },
-                    secretObject: {
-                        child: {
-                            type: Schema.Types.Mixed,
-                        }
                     }
-                }, {
-                    toJSON: {
-                        virtuals: true
-                    }
-                });
-                // Define virtual
-                UserSchema.virtual("v_v").get(() => {
-                    return "virtual value";
-                });
-                UserSchema.plugin(mongooseSerializeProxyPlugin({
-                    dryRun: true,
-                }));
-                const User = model<User & { v_v: string }>("User", UserSchema);
-                const userJoe = new User({
-                    name: "Joe",
-                    email: "joe@example.com",
-                    password: "secret",
-                    secretSettings: {
-                        age: 12
-                    }
-                });
-                await userJoe.save();
-                const user = await User.findOne({
-                    name: "Joe"
-                });
-                if (!user) {
-                    throw new Error("Not found findUserJoe");
                 }
-                const json = user.toJSON();
-                json.id = "dummy";
-                json._id = "dummy";
-                assert.deepStrictEqual(json, {
-                    id: "dummy",
-                    _id: "dummy",
-                    __v: 0,
-                    "name": "Joe",
-                    "email": "joe@example.com",
-                    "password": "secret",
-                    "secretSettings": {
-                        "age": 12
-                    },
-                    v_v: "virtual value"
-                });
-                // Assignment value should be filtered
-                const secretSettings = user.secretSettings;
-                assert.strictEqual(JSON.stringify(secretSettings), `{"age":12}`);
+            }, {
+                toJSON: {
+                    virtuals: true
+                }
             });
-            it("should call toJSONCallback", async () => {
-                const UserSchema = new Schema<User>({
-                    name: String,
-                    email: String,
-                    password: {
-                        type: String,
-                    },
-                    secretSettings: {
+            // Define virtual
+            UserSchema.virtual("v_v").get(() => {
+                return "virtual value";
+            });
+            UserSchema.plugin(mongooseSerializeProxyPlugin({
+                dryRun: true,
+            }));
+            const User = model<User & { v_v: string }>("User", UserSchema);
+            const userJoe = new User({
+                name: "Joe",
+                email: "joe@example.com",
+                password: "secret",
+                secretSettings: {
+                    age: 12
+                }
+            });
+            await userJoe.save();
+            const user = await User.findOne({
+                name: "Joe"
+            });
+            if (!user) {
+                throw new Error("Not found findUserJoe");
+            }
+            const json = user.toJSON();
+            json.id = "dummy";
+            json._id = "dummy";
+            assert.deepStrictEqual(json, {
+                id: "dummy",
+                _id: "dummy",
+                __v: 0,
+                "name": "Joe",
+                "email": "joe@example.com",
+                "password": "secret",
+                "secretSettings": {
+                    "age": 12
+                },
+                v_v: "virtual value"
+            });
+            // Assignment value should be filtered
+            const secretSettings = user.secretSettings;
+            assert.strictEqual(JSON.stringify(secretSettings), `{"age":12}`);
+        });
+        it("should call toJSONCallback", async () => {
+            const UserSchema = new Schema<User>({
+                name: String,
+                email: String,
+                password: {
+                    type: String,
+                },
+                secretSettings: {
+                    type: Schema.Types.Mixed,
+                },
+                secretObject: {
+                    child: {
                         type: Schema.Types.Mixed,
-                    },
-                    secretObject: {
-                        child: {
-                            type: Schema.Types.Mixed,
-                        }
                     }
-                }, {
-                    toJSON: {
-                        virtuals: true
-                    }
-                });
-                // Define virtual
-                UserSchema.virtual("v_v").get(() => {
-                    return "virtual value";
-                });
-                let toJSONCallbackCount = 0;
-                UserSchema.plugin(mongooseSerializeProxyPlugin({
-                    dryRun: true,
-                    toJSONCallback: (oldJSON, newJSON) => {
-                        toJSONCallbackCount++;
-                        assert.strictEqual(oldJSON, newJSON, "should be same object");
-                    }
-                }));
-                const User = model<User & { v_v: string }>("User", UserSchema);
-                const userJoe = new User({
-                    name: "Joe",
-                    email: "joe@example.com",
-                    password: "secret",
-                    secretSettings: {
-                        age: 12
-                    }
-                });
-                await userJoe.save();
-                const user = await User.findOne({
-                    name: "Joe"
-                });
-                if (!user) {
-                    throw new Error("Not found findUserJoe");
                 }
-                // 1
-                JSON.stringify(user);
-                const secretSettings = user.secretSettings;
-                // 2
-                JSON.stringify(secretSettings);
-                assert.strictEqual(toJSONCallbackCount, 2);
+            }, {
+                toJSON: {
+                    virtuals: true
+                }
             });
+            // Define virtual
+            UserSchema.virtual("v_v").get(() => {
+                return "virtual value";
+            });
+            let toJSONCallbackCount = 0;
+            UserSchema.plugin(mongooseSerializeProxyPlugin({
+                dryRun: true,
+                toJSONCallback: (oldJSON, newJSON) => {
+                    toJSONCallbackCount++;
+                    assert.strictEqual(oldJSON, newJSON, "should be same object");
+                }
+            }));
+            const User = model<User & { v_v: string }>("User", UserSchema);
+            const userJoe = new User({
+                name: "Joe",
+                email: "joe@example.com",
+                password: "secret",
+                secretSettings: {
+                    age: 12
+                }
+            });
+            await userJoe.save();
+            const user = await User.findOne({
+                name: "Joe"
+            });
+            if (!user) {
+                throw new Error("Not found findUserJoe");
+            }
+            // 1
+            JSON.stringify(user);
+            const secretSettings = user.secretSettings;
+            // 2
+            JSON.stringify(secretSettings);
+            assert.strictEqual(toJSONCallbackCount, 2);
         });
     });
 });
