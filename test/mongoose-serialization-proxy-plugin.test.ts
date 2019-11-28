@@ -16,12 +16,12 @@ interface User extends Document {
     }
 }
 
-describe("mongoose-serialization-proxy-plugin", function() {
-    before(function(done) {
+describe("mongoose-serialization-proxy-plugin", function () {
+    before(function (done) {
         mongoose.connect("mongodb://localhost/mongoose-serialization-proxy-plugin", {
             useNewUrlParser: true,
             useUnifiedTopology: true
-        }, function(err) {
+        }, function (err) {
             if (err) {
                 console.error("MongoDB: " + err.message);
                 console.error("MongoDB is running? Is it accessible by this application?");
@@ -31,17 +31,17 @@ describe("mongoose-serialization-proxy-plugin", function() {
         });
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         mongoose.models = {};
         mongoose.connection.db.dropDatabase(done);
     });
 
-    after(function(done) {
+    after(function (done) {
         mongoose.connection.close(done);
     });
 
-    describe("A model with no hidden properties defined", function() {
-        it("should return all properties", async function() {
+    describe("A model with no hidden properties defined", function () {
+        it("should return all properties", async function () {
             const UserSchema = new Schema<User>({
                 name: String,
                 email: String,
@@ -81,15 +81,15 @@ describe("mongoose-serialization-proxy-plugin", function() {
             }
             // property reference is ok
             assert.strictEqual(user.password, "secret");
-            assert.deepStrictEqual(user.secretSettings, { age: 12 });
+            assert.deepStrictEqual(user.secretSettings, {age: 12});
             // serialization should be filtered
-            assert.deepStrictEqual(user.toJSON(), { "name": "Joe", "email": "joe@example.com" });
+            assert.deepStrictEqual(user.toJSON(), {"name": "Joe", "email": "joe@example.com"});
             assert.strictEqual(JSON.stringify(user), `{"name":"Joe","email":"joe@example.com"}`);
             // Assignment value should be filtered
             const secretSettings = user.secretSettings;
             assert.strictEqual(JSON.stringify(secretSettings), `{}`);
         });
-        it("should support virtual", async function() {
+        it("should support virtual", async function () {
             const UserSchema = new Schema<User>({
                 name: String,
                 email: String,
@@ -140,7 +140,7 @@ describe("mongoose-serialization-proxy-plugin", function() {
             // property reference is ok
             assert.strictEqual(user.password, "secret");
             assert.strictEqual(user.v_v, "virtual value");
-            assert.deepStrictEqual(user.secretSettings, { age: 12 });
+            assert.deepStrictEqual(user.secretSettings, {age: 12});
             // serialization should be filtered
             const json = user.toJSON();
             json.id = "dummy";
@@ -154,5 +154,85 @@ describe("mongoose-serialization-proxy-plugin", function() {
             const secretSettings = user.secretSettings;
             assert.strictEqual(JSON.stringify(secretSettings), `{}`);
         });
+        it("should toJSONCallback when stringigy", async function () {
+            const UserSchema = new Schema<User>({
+                name: String,
+                email: String,
+                password: {
+                    type: String,
+                },
+                secretSettings: {
+                    type: Schema.Types.Mixed,
+                },
+                secretObject: {
+                    child: {
+                        type: Schema.Types.Mixed,
+                    }
+                }
+            }, {
+                toJSON: {
+                    virtuals: true
+                }
+            });
+            // Define virtual
+            UserSchema.virtual("v_v").get(() => {
+                return "virtual value";
+            });
+            let shouldCalled = false;
+            UserSchema.plugin(mongooseSerializeProxyPlugin({
+                defaultFieldsAccess: "public",
+                defaultVirtualsAccess: "public",
+                versionKeyAccess: "public",
+                autoFieldAccess: "public",
+                toJSONCallback: (oldJSON: any, newJSON: any) => {
+                    shouldCalled = true;
+                    assert.strictEqual(typeof oldJSON.id, "string");
+                    assert.strictEqual(typeof oldJSON._id, "object");
+                    assert.strictEqual(typeof newJSON.id, "string");
+                    assert.strictEqual(typeof newJSON._id, "object");
+                    delete oldJSON.id;
+                    delete oldJSON._id;
+                    delete newJSON.id;
+                    delete newJSON._id;
+                    assert.deepStrictEqual(oldJSON, {
+                        name: 'Joe',
+                        email: 'joe@example.com',
+                        password: 'secret',
+                        secretSettings: {age: 12},
+                        __v: 0,
+                        v_v: 'virtual value',
+                    });
+                    assert.deepStrictEqual(newJSON, {
+                        name: 'Joe',
+                        email: 'joe@example.com',
+                        password: 'secret',
+                        secretSettings: {age: 12},
+                        __v: 0,
+                        v_v: 'virtual value',
+                    });
+                }
+            }));
+            const User = model<User & { v_v: string }>("User", UserSchema);
+            const userJoe = new User({
+                name: "Joe",
+                email: "joe@example.com",
+                password: "secret",
+                secretSettings: {
+                    age: 12
+                }
+            });
+            await userJoe.save();
+            const user = await User.findOne({
+                name: "Joe"
+            });
+            if (!user) {
+                throw new Error("Not found findUserJoe");
+            }
+            // serialization
+            JSON.stringify(user);
+            // then,
+            assert.ok(shouldCalled, "toJSONCallback should be called");
+        });
+
     });
 });

@@ -27,10 +27,11 @@ const factoryShouldWrapProxy = (options?: proxySchemaOptions) => {
 
 export function mongooseSerializeProxyPlugin(filterOptions?: createFilterSchemaOptions) {
     const shouldProxy = factoryShouldWrapProxy(filterOptions);
+    const toJSONCallback = filterOptions && filterOptions.toJSONCallback;
     return (schema: Schema) => {
         const filterSchema = createFilterSchema(schema, filterOptions);
         // find hook - replace each items with proxy
-        schema.post("find", function(docs) {
+        schema.post("find", function (docs) {
             if (!Array.isArray(docs)) {
                 return;
             }
@@ -41,7 +42,7 @@ export function mongooseSerializeProxyPlugin(filterOptions?: createFilterSchemaO
             }
         });
         // findOne hook - replace each property object of item with proxy
-        schema.post("findOne", function(doc: { [index: string]: any }) {
+        schema.post("findOne", function (doc: { [index: string]: any }) {
             if (doc === null || typeof doc !== "object") {
                 return;
             }
@@ -69,11 +70,15 @@ export function mongooseSerializeProxyPlugin(filterOptions?: createFilterSchemaO
                     result[key] = defaultVirtualsAccess;
                     return result;
                 }, {} as { [index: string]: FILTER_SCHEMA_ACCESS });
-                return filterTargetWithFilterSchema({
+                const filteredJSON = filterTargetWithFilterSchema({
                     localTarget: ret,
-                    localSchema: { ...filterSchema, ...virtualFilterSchema },
+                    localSchema: {...filterSchema, ...virtualFilterSchema},
                     localKeyStack: []
                 }, mergeOptionWithDefault(filterOptions));
+                if (toJSONCallback) {
+                    toJSONCallback(ret, filteredJSON);
+                }
+                return filteredJSON;
             }
         });
     };

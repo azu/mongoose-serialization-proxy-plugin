@@ -76,6 +76,64 @@ import { mongooseSerializeProxyPlugin } from "mongoose-serialization-proxy-plugi
 })();
 ```
 
+### Example: Only Logging
+ 
+Pass through toJSON, but call `toJSONCallback` function.
+
+```js
+import { mongooseSerializeProxyPlugin } from "mongoose-serialization-proxy-plugin";
+(async function(){
+    const UserSchema = new Schema({
+        name: String,
+        email: String,
+        password: {
+            type: String,
+        },
+        secretSettings: {
+            type: Schema.Types.Mixed,
+        },
+        secretObject: {
+            child: {
+                type: Schema.Types.Mixed,
+            }
+        }
+    });
+    // Register plugin
+    UserSchema.plugin(mongooseSerializeProxyPlugin({
+        // no modify json object
+        defaultSchemaAccess: "public",
+        defaultFieldsAccess: "public",
+        defaultVirtualsAccess: "public",
+        versionKeyAccess: "public",
+        autoFieldAccess: "public",
+        // callback
+        toJSONCallback: (oldJSON, newJSON) => {
+            // It is called when json stringify the mongo model
+        }
+    }));
+    // Create Model
+    const User = model("User", UserSchema);
+    const userJoe = new User({
+        name: "Joe",
+        email: "joe@example.com",
+        password: "secret",
+        secretSettings: {
+            age: 12
+        }
+    });
+    await userJoe.save();
+    const user = await User.findOne({
+        name: "Joe"
+    });
+    if (!user) {
+        throw new Error("Not found findUserJoe");
+    }
+    // user
+    JSON.stringify(user);
+})();
+```
+
+
 ## Changelog
 
 See [Releases page](https://github.com/azu/mongoose-serialization-proxy-plugin/releases).

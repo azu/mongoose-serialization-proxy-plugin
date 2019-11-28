@@ -86,15 +86,22 @@ export interface proxySchemaOptions {
      * Default: "private"
      */
     defaultFieldsAccess?: FILTER_SCHEMA_ACCESS;
+    /**
+     * toJSONが呼ばれたときのコールバック関数
+     */
+    toJSONCallback?: (oldJSON: {}, newJSON: {}) => void
 }
 
 const DefaultOptions = {
-    defaultFieldsAccess: "private"
+    defaultFieldsAccess: "private",
+    toJSONCallback: () => {
+    }
 } as const;
 
 export const mergeOptionWithDefault = (options?: proxySchemaOptions): Required<proxySchemaOptions> => {
     const defaultSchemaAccess = options && options.defaultFieldsAccess !== undefined ? options.defaultFieldsAccess : DefaultOptions.defaultFieldsAccess;
-    return { defaultFieldsAccess: defaultSchemaAccess };
+    const toJSONCallback = options && options.toJSONCallback !== undefined ? options.toJSONCallback : DefaultOptions.toJSONCallback;
+    return {defaultFieldsAccess: defaultSchemaAccess, toJSONCallback};
 };
 /**
  * proxy with schema object
@@ -103,7 +110,7 @@ export const mergeOptionWithDefault = (options?: proxySchemaOptions): Required<p
  * @param options
  */
 export const proxySchema = <T extends { [index: string]: any }>(target: T, filterSchema: FilterSchema<T> | FILTER_SCHEMA_ACCESS, options?: proxySchemaOptions): T => {
-    const { defaultFieldsAccess } = mergeOptionWithDefault(options);
+    const {defaultFieldsAccess, toJSONCallback} = mergeOptionWithDefault(options);
 
     function innerProxy(localTarget: T, localSchema: FilterSchema<T> | FILTER_SCHEMA_ACCESS, keyStack: string[] = []): T {
         return new Proxy(localTarget, {
@@ -114,13 +121,16 @@ export const proxySchema = <T extends { [index: string]: any }>(target: T, filte
                     const toJSON = Reflect.get(target, "toJSON", receiver);
                     return function toJSONByProxySchema() {
                         const originalJSON = toJSON ? toJSON.call(target) : target;
-                        return filterTargetWithFilterSchema({
+                        let filterdJSON = filterTargetWithFilterSchema({
                             localTarget: originalJSON,
                             localSchema: localSchema,
                             localKeyStack: keyStack
                         }, {
-                            defaultFieldsAccess
+                            defaultFieldsAccess,
+                            toJSONCallback
                         });
+                        toJSONCallback(originalJSON, filterdJSON);
+                        return filterdJSON;
                     };
                 }
                 const childTarget = Reflect.get(target, key, receiver);
