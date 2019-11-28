@@ -1,6 +1,6 @@
 {
   "name": "mongoose-serialization-proxy-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Hide mongo model properties when JSON.stringify for mongoose plugin.",
   "keywords": [
     "json",
