@@ -46,7 +46,10 @@ export const filterTargetWithFilterSchema = <T extends { [index: string]: any }>
         localTarget: T,
         localSchema: FilterSchema<T> | FILTER_SCHEMA_ACCESS,
         localKeyStack: string[],
-    }, options: Required<proxySchemaOptions>) => {
+    }, options: {
+        defaultFieldsAccess?: FILTER_SCHEMA_ACCESS;
+    }
+) => {
     // If the `localSchema` is true, just return target
     if (localSchema === "public") {
         return localTarget; //return
@@ -87,21 +90,35 @@ export interface proxySchemaOptions {
      */
     defaultFieldsAccess?: FILTER_SCHEMA_ACCESS;
     /**
-     * toJSONが呼ばれたときのコールバック関数
+     * callback function when call `toJSON` method
      */
     toJSONCallback?: (oldJSON: {}, newJSON: {}) => void
+    /**
+     * Enable dry-run mode
+     * If it is true, does not transform json object on toJSON method.
+     * It is useful for logging
+     * Default: false
+     */
+    dryRun?: boolean;
 }
 
 const DefaultOptions = {
     defaultFieldsAccess: "private",
     toJSONCallback: () => {
-    }
+        /* nope */
+    },
+    dryRun: false
 } as const;
 
 export const mergeOptionWithDefault = (options?: proxySchemaOptions): Required<proxySchemaOptions> => {
     const defaultSchemaAccess = options && options.defaultFieldsAccess !== undefined ? options.defaultFieldsAccess : DefaultOptions.defaultFieldsAccess;
-    const toJSONCallback = options && options.toJSONCallback !== undefined ? options.toJSONCallback : DefaultOptions.toJSONCallback;
-    return {defaultFieldsAccess: defaultSchemaAccess, toJSONCallback};
+    const toJSONCallback = options && options.toJSONCallback !== undefined
+        ? options.toJSONCallback
+        : DefaultOptions.toJSONCallback;
+    const dryRun = options && options.dryRun !== undefined
+        ? options.dryRun
+        : DefaultOptions.dryRun;
+    return {defaultFieldsAccess: defaultSchemaAccess, toJSONCallback, dryRun};
 };
 /**
  * proxy with schema object
@@ -110,7 +127,7 @@ export const mergeOptionWithDefault = (options?: proxySchemaOptions): Required<p
  * @param options
  */
 export const proxySchema = <T extends { [index: string]: any }>(target: T, filterSchema: FilterSchema<T> | FILTER_SCHEMA_ACCESS, options?: proxySchemaOptions): T => {
-    const {defaultFieldsAccess, toJSONCallback} = mergeOptionWithDefault(options);
+    const {defaultFieldsAccess, toJSONCallback, dryRun} = mergeOptionWithDefault(options);
 
     function innerProxy(localTarget: T, localSchema: FilterSchema<T> | FILTER_SCHEMA_ACCESS, keyStack: string[] = []): T {
         return new Proxy(localTarget, {
@@ -121,16 +138,20 @@ export const proxySchema = <T extends { [index: string]: any }>(target: T, filte
                     const toJSON = Reflect.get(target, "toJSON", receiver);
                     return function toJSONByProxySchema() {
                         const originalJSON = toJSON ? toJSON.call(target) : target;
-                        let filterdJSON = filterTargetWithFilterSchema({
+                        // do no transform when dry-run
+                        if (dryRun) {
+                            toJSONCallback(originalJSON, originalJSON);
+                            return originalJSON;
+                        }
+                        const filteredJSON = filterTargetWithFilterSchema({
                             localTarget: originalJSON,
                             localSchema: localSchema,
                             localKeyStack: keyStack
                         }, {
                             defaultFieldsAccess,
-                            toJSONCallback
                         });
-                        toJSONCallback(originalJSON, filterdJSON);
-                        return filterdJSON;
+                        toJSONCallback(originalJSON, filteredJSON);
+                        return filteredJSON;
                     };
                 }
                 const childTarget = Reflect.get(target, key, receiver);

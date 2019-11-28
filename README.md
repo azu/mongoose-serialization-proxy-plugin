@@ -101,11 +101,7 @@ import { mongooseSerializeProxyPlugin } from "mongoose-serialization-proxy-plugi
     // Register plugin
     UserSchema.plugin(mongooseSerializeProxyPlugin({
         // no modify json object
-        defaultSchemaAccess: "public",
-        defaultFieldsAccess: "public",
-        defaultVirtualsAccess: "public",
-        versionKeyAccess: "public",
-        autoFieldAccess: "public",
+        dryRun: true,
         // callback
         toJSONCallback: (oldJSON, newJSON) => {
             // It is called when json stringify the mongo model
@@ -128,7 +124,7 @@ import { mongooseSerializeProxyPlugin } from "mongoose-serialization-proxy-plugi
     if (!user) {
         throw new Error("Not found findUserJoe");
     }
-    // user
+    // it will call `toJSONCallback` callback
     JSON.stringify(user);
 })();
 ```

@@ -1,4 +1,4 @@
-import { createFilterSchema, createFilterSchemaOptions } from "./create-filter-schema";
+import { createFilterSchema } from "./create-filter-schema";
 import {
     FILTER_SCHEMA_ACCESS,
     FilterSchema,
@@ -25,9 +25,47 @@ const factoryShouldWrapProxy = (options?: proxySchemaOptions) => {
     };
 };
 
-export function mongooseSerializeProxyPlugin(filterOptions?: createFilterSchemaOptions) {
+export type mongooseSerializeProxyPluginOptions = {
+    /**
+     * Default access level of auto schema like `_id`
+     * Default: "private"
+     */
+    autoFieldAccess?: FILTER_SCHEMA_ACCESS;
+    /**
+     *  Default access level of versionKey like `__v`
+     *  Default: "private"
+     */
+    versionKeyAccess?: FILTER_SCHEMA_ACCESS;
+    /**
+     * Default access level of virtual property
+     * Default: "private"
+     *
+     * Note: defaultVirtualsAccess only support Schema#toJSON
+     */
+    defaultVirtualsAccess?: FILTER_SCHEMA_ACCESS;
+    /**
+     * Default access level of undefined property of filterSchema
+     * Default: "private"
+     */
+    defaultFieldsAccess?: FILTER_SCHEMA_ACCESS;
+    /**
+     * callback function when call `toJSON` method
+     */
+    toJSONCallback?: (oldJSON: {}, newJSON: {}) => void
+    /**
+     * Enable dry-run mode
+     * If it is true, does not transform json object on toJSON method.
+     * It is useful for logging
+     * Default: false
+     */
+    dryRun?: boolean;
+};
+
+export function mongooseSerializeProxyPlugin(filterOptions?: mongooseSerializeProxyPluginOptions) {
     const shouldProxy = factoryShouldWrapProxy(filterOptions);
     const toJSONCallback = filterOptions && filterOptions.toJSONCallback;
+    const defaultVirtualsAccess = filterOptions && filterOptions.defaultVirtualsAccess ? filterOptions.defaultVirtualsAccess : "private";
+    const dryRun = filterOptions && filterOptions.dryRun !== undefined ? filterOptions.dryRun : false;
     return (schema: Schema) => {
         const filterSchema = createFilterSchema(schema, filterOptions);
         // find hook - replace each items with proxy
@@ -62,10 +100,16 @@ export function mongooseSerializeProxyPlugin(filterOptions?: createFilterSchemaO
         schema.set("toJSON", {
             ...toJSONOptions,
             transform: (_doc, ret, _options) => {
+                // early return when dry-run
+                if (dryRun) {
+                    if (toJSONCallback) {
+                        toJSONCallback(ret, ret);
+                    }
+                    return ret;
+                }
                 const virtualKeys = Object.keys(ret).filter(key => {
                     return schema.pathType(key) === "virtual";
                 });
-                const defaultVirtualsAccess = filterOptions && filterOptions.defaultVirtualsAccess ? filterOptions.defaultVirtualsAccess : "private";
                 const virtualFilterSchema = virtualKeys.reduce((result, key) => {
                     result[key] = defaultVirtualsAccess;
                     return result;
