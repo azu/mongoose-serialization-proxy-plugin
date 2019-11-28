@@ -1,6 +1,6 @@
 {
   "name": "mongoose-serialization-proxy-plugin",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Hide mongo model properties when JSON.stringify for mongoose plugin.",
   "keywords": [
     "json",
@@ -71,9 +71,8 @@
     "ts-node-test-register": "^8.0.1",
     "typescript": "^3.7.2"
   },
-  "dependencies": {
-    "@moyuyc/walk-tree": "^1.0.3",
-    "traverse": "^0.6.6",
-    "tree-crawl": "^1.0.5"
+  "dependencies": {},
+  "peerDependencies": {
+    "@types/mongoose": "^5.5.32"
   }
 }
