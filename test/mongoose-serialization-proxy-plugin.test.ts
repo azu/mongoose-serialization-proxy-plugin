@@ -1,7 +1,7 @@
 "use strict";
 
 import mongoose, { Document, model, Schema } from "mongoose";
-import { mongooseSerializeProxyPlugin } from "../src/mongoose-serialization-proxy-plugin";
+import { mongooseSerializationProxyPlugin } from "../src/mongoose-serialization-proxy-plugin";
 import * as assert from "assert";
 
 interface User extends Document {
@@ -57,7 +57,7 @@ describe("mongoose-serialization-proxy-plugin", function () {
                     }
                 }
             });
-            UserSchema.plugin(mongooseSerializeProxyPlugin());
+            UserSchema.plugin(mongooseSerializationProxyPlugin());
             const User = model<User>("User", UserSchema);
             const userJoe = new User({
                 name: "Joe",
@@ -107,7 +107,7 @@ describe("mongoose-serialization-proxy-plugin", function () {
                     }
                 }
             });
-            UserSchema.plugin(mongooseSerializeProxyPlugin({
+            UserSchema.plugin(mongooseSerializationProxyPlugin({
                 defaultFieldsAccess: "public"
             }));
             const User = model<User>("User", UserSchema);
@@ -163,7 +163,7 @@ describe("mongoose-serialization-proxy-plugin", function () {
             UserSchema.virtual("v_v").get(() => {
                 return "virtual value";
             });
-            UserSchema.plugin(mongooseSerializeProxyPlugin({
+            UserSchema.plugin(mongooseSerializationProxyPlugin({
                 defaultFieldsAccess: "public",
                 // allow virtual toJSON
                 defaultVirtualsAccess: "public"
@@ -226,7 +226,7 @@ describe("mongoose-serialization-proxy-plugin", function () {
                 return "virtual value";
             });
             let shouldCalled = false;
-            UserSchema.plugin(mongooseSerializeProxyPlugin({
+            UserSchema.plugin(mongooseSerializationProxyPlugin({
                 defaultFieldsAccess: "public",
                 defaultVirtualsAccess: "public",
                 versionKeyAccess: "public",
@@ -306,7 +306,7 @@ describe("mongoose-serialization-proxy-plugin", function () {
             UserSchema.virtual("v_v").get(() => {
                 return "virtual value";
             });
-            UserSchema.plugin(mongooseSerializeProxyPlugin({
+            UserSchema.plugin(mongooseSerializationProxyPlugin({
                 dryRun: true,
             }));
             const User = model<User & { v_v: string }>("User", UserSchema);
@@ -369,7 +369,7 @@ describe("mongoose-serialization-proxy-plugin", function () {
                 return "virtual value";
             });
             let toJSONCallbackCount = 0;
-            UserSchema.plugin(mongooseSerializeProxyPlugin({
+            UserSchema.plugin(mongooseSerializationProxyPlugin({
                 dryRun: true,
                 toJSONCallback: (oldJSON, newJSON) => {
                     toJSONCallbackCount++;

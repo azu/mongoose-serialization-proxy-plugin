@@ -61,7 +61,7 @@ export type mongooseSerializeProxyPluginOptions = {
     dryRun?: boolean;
 };
 
-export function mongooseSerializeProxyPlugin(filterOptions?: mongooseSerializeProxyPluginOptions) {
+export function mongooseSerializationProxyPlugin(filterOptions?: mongooseSerializeProxyPluginOptions) {
     const shouldProxy = factoryShouldWrapProxy(filterOptions);
     const toJSONCallback = filterOptions && filterOptions.toJSONCallback;
     const defaultVirtualsAccess = filterOptions && filterOptions.defaultVirtualsAccess ? filterOptions.defaultVirtualsAccess : "private";

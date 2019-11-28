@@ -10,6 +10,8 @@ Hide secret properties of mongo model when serialize the model with `JSON.string
 
 - Support `Schema#toJSON`
 - Support assignment value using Proxy
+- Support dry-run mode
+- Support logging
 
 ## Install
 
@@ -20,7 +22,7 @@ Install with [npm](https://www.npmjs.com/):
 ## Usage
 
 ```js
-import { mongooseSerializeProxyPlugin } from "mongoose-serialization-proxy-plugin";
+import { mongooseSerializationProxyPlugin } from "mongoose-serialization-proxy-plugin";
 (async function(){
     const UserSchema = new Schema({
         name: String,
@@ -41,7 +43,7 @@ import { mongooseSerializeProxyPlugin } from "mongoose-serialization-proxy-plugi
         }
     });
     // Register plugin
-    UserSchema.plugin(mongooseSerializeProxyPlugin({
+    UserSchema.plugin(mongooseSerializationProxyPlugin({
         // No "access" defined value, will be "public" 
         defaultSchemaAccess: "public"
     }));
@@ -81,7 +83,7 @@ import { mongooseSerializeProxyPlugin } from "mongoose-serialization-proxy-plugi
 Pass through toJSON, but call `toJSONCallback` function.
 
 ```js
-import { mongooseSerializeProxyPlugin } from "mongoose-serialization-proxy-plugin";
+import { mongooseSerializationProxyPlugin } from "mongoose-serialization-proxy-plugin";
 (async function(){
     const UserSchema = new Schema({
         name: String,
@@ -99,7 +101,7 @@ import { mongooseSerializeProxyPlugin } from "mongoose-serialization-proxy-plugi
         }
     });
     // Register plugin
-    UserSchema.plugin(mongooseSerializeProxyPlugin({
+    UserSchema.plugin(mongooseSerializationProxyPlugin({
         // no modify json object
         dryRun: true,
         // callback
